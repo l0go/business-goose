@@ -1,6 +1,7 @@
 package;
 
 import haxe.Template;
+import promises.Promise;
 
 using StringTools;
 
@@ -9,7 +10,7 @@ class Generator {
 	@:keep
 	@:expose("activate")
     static function activate(context: vscode.ExtensionContext) {
-		log("I am the Business Goose");
+		log("I am the Business Goose!!!");
 		context.subscriptions.push(Vscode.commands.registerCommand("businessGoose.generate", main));
     }
 	#end
@@ -21,23 +22,40 @@ class Generator {
 
 	static function generate() {
 		final dir = #if vscode Vscode.workspace.workspaceFolders[0].uri.path #else "." #end;
-		var t = new haxe.Template(sys.io.File.getContent('$dir/template.html'));
-		sys.FileSystem.createDirectory('$dir/out');
-		for (file in sys.FileSystem.readDirectory('$dir/pages/')) {
-			var content: Array<String> = sys.io.File.getContent('$dir/pages/' + file).split("\n");
-			final title = content.shift();
-			var body = "";
-			for (l in content) {
-				body += '$l\n';
+		var t: haxe.Template;
+		getContent('$dir/template.html').then(content -> {
+			t = new haxe.Template(content);
+			return createDirectory('$dir/out');
+		}).then(_ -> {
+			return readDirectory('$dir/pages/');	
+		}).then(files -> {
+			for (file in files) {
+				getContent('$dir/pages/' + file).then(c -> {
+					var content = c.split("\n");
+					final title = content.shift();
+					var body = "";
+					for (l in content) {
+						body += '$l\n';
+					}
+					saveContent('$dir/out/$file', t.execute({page_title: title, body: body.trim()}));
+				});
 			}
-			sys.io.File.saveContent('$dir/out/$file', t.execute({page_title: title, body: body.trim()}));
-		}
-		if (sys.FileSystem.exists('$dir/assets/')) {
-			for (file in sys.FileSystem.readDirectory('$dir/assets/')) {
-				sys.io.File.saveContent('$dir/out/$file', sys.io.File.getContent('$dir/assets/$file'));
-			}
-		}
-		log("Done");
+		}).then((_) ->{ 
+			exists('$dir/assets/').then((b) -> {
+				if (!b) return;
+				readDirectory('$dir/assets/').then(files -> {
+					for (file in files) {
+						var content: String = "";
+						getContent('$dir/assets/$file').then(c -> {
+							content = c;
+						});
+						saveContent('$dir/out/$file', content);
+					}
+				});
+			});
+		}).then((_) -> {
+			log("Done");
+		});
 	}
 
 	static inline function log(contents: String) {
@@ -46,5 +64,70 @@ class Generator {
 		#else
 		Sys.println(contents);
 		#end
+	}
+
+	static function getContent(path: String): Promise<String> {
+		return new Promise((resolve, reject) -> {
+			#if vscode
+			Vscode.workspace.fs.readFile(vscode.Uri.parse(path)).then((h) -> {
+				final d = new js.html.TextDecoder();
+				resolve(d.decode(h.buffer));
+			});
+			#else
+			resolve(sys.io.File.getContent(path));
+			#end
+		});
+	}
+
+	static function saveContent(path: String, content: String): Promise<Bool> {
+		return new Promise((resolve, reject) -> {
+			#if vscode
+			final e = new js.html.TextEncoder();
+			Vscode.workspace.fs.writeFile(vscode.Uri.parse(path), e.encode(content)).then((_) -> {
+				resolve(true);
+			});
+			#else
+			sys.io.File.saveContent(path, content);
+			resolve(true);
+			#end
+		});
+	}
+
+	static function createDirectory(path: String): Promise<Bool> {
+		return new Promise((resolve, reject) -> {
+			#if vscode
+			Vscode.workspace.fs.createDirectory(vscode.Uri.parse(path)).then((_) -> {
+				resolve(true);
+			});
+			#else
+			sys.FileSystem.createDirectory(path);
+			resolve(true);
+			#end
+		});
+	}
+
+	static function readDirectory(path: String): Promise<Array<String>> {
+		return new Promise((resolve, reject) -> {
+			#if vscode
+				Vscode.workspace.fs.readDirectory(vscode.Uri.parse(path)).then(h -> {
+					resolve([for (f in h) f.name]);
+				});
+			#else
+			resolve(sys.FileSystem.readDirectory(path));
+			#end
+		});
+	}
+
+	static function exists(path: String): Promise<Bool> {
+		return new Promise((resolve, reject) -> {
+			#if vscode
+			Vscode.workspace.fs.stat(vscode.Uri.parse(path)).then((_) -> {
+				resolve(true);
+			});
+			resolve(false);
+			#else
+			resolve(sys.FileSystem.exists(path));
+			#end
+		});
 	}
 }

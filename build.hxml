@@ -1,6 +1,7 @@
 --js bin/extension.js
 -cp vendor/vscode/src/
 -cp vendor/hxnodejs/src/
+-cp vendor/promises/src/
 vendor/hxnodejs/extraParams.hxml
 -D analyzer-optimize
 -D js-es=6
