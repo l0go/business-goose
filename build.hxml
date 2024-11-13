@@ -1,0 +1,8 @@
+--js bin/extension.js
+-cp vendor/vscode/src/
+-cp vendor/hxnodejs/src/
+vendor/hxnodejs/extraParams.hxml
+-D analyzer-optimize
+-D js-es=6
+-D vscode
+Generator

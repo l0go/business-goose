@@ -1,0 +1,23 @@
+{
+	"name": "business-goose",
+	"displayName": "Business Goose",
+	"publisher": "l0go",
+	"repository": {
+        "type": "git",
+        "url": "https://github.com/l0go/business-goose.git"
+    },
+	"icon": "images/logo.png",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.4.0"
+	},
+	"main": "bin/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "businessGoose.generate",
+				"title": "Generate Website"
+			}
+		]
+	}
+}

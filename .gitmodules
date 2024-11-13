@@ -1,0 +1,6 @@
+[submodule "vendor/vscode"]
+	path = vendor/vscode
+	url = https://github.com/vshaxe/vscode-extern
+[submodule "vendor/hxnodejs"]
+	path = vendor/hxnodejs
+	url = https://github.com/HaxeFoundation/hxnodejs
