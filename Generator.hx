@@ -103,7 +103,6 @@ class Generator {
 		#else
 		return getContent(fromPath).then(c -> {
 			saveContent(toPath, c);
-			resolve(true);
 		});
 		#end
 	}
