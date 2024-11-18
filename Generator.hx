@@ -2,6 +2,7 @@ package;
 
 import haxe.Template;
 import promises.Promise;
+import promises.PromiseUtils;
 
 using StringTools;
 
@@ -41,18 +42,16 @@ class Generator {
 				});
 			}
 		}).then((_) ->{ 
+			var p: Array<Promise<Bool>>= [];
 			exists('$dir/assets/').then((b) -> {
 				if (!b) return;
 				readDirectory('$dir/assets/').then(files -> {
 					for (file in files) {
-						var content: String = "";
-						getContent('$dir/assets/$file').then(c -> {
-							content = c;
-						});
-						saveContent('$dir/out/$file', content);
+						p.push(copy('$dir/assets/$file', '$dir/out/$file'));
 					}
 				});
 			});
+			return PromiseUtils.runAll(cast p);
 		}).then((_) -> {
 			log("Done");
 		});
@@ -93,6 +92,22 @@ class Generator {
 		});
 	}
 
+	static function copy(fromPath: String, toPath: String): Promise<Bool> {
+		#if vscode
+		return new Promise((resolve, reject) -> {
+			Vscode.workspace.fs.copy(vscode.Uri.parse(fromPath), vscode.Uri.parse(toPath), {overwrite: true}).then((_) -> {
+				resolve(true);
+			});
+			resolve(false);
+		});
+		#else
+		return getContent(fromPath).then(c -> {
+			saveContent(toPath, c);
+			resolve(true);
+		});
+		#end
+	}
+
 	static function createDirectory(path: String): Promise<Bool> {
 		return new Promise((resolve, reject) -> {
 			#if vscode
@@ -121,10 +136,11 @@ class Generator {
 	static function exists(path: String): Promise<Bool> {
 		return new Promise((resolve, reject) -> {
 			#if vscode
-			Vscode.workspace.fs.stat(vscode.Uri.parse(path)).then((_) -> {
-				resolve(true);
-			});
-			resolve(false);
+			resolve(true);
+			//Vscode.workspace.fs.stat(vscode.Uri.parse(path)).then((_) -> {
+			//	resolve(true);
+			//});
+			//resolve(false);
 			#else
 			resolve(sys.FileSystem.exists(path));
 			#end

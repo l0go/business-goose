@@ -7,7 +7,7 @@
         "url": "https://github.com/l0go/business-goose.git"
     },
 	"icon": "images/logo.png",
-	"version": "0.0.2",
+	"version": "0.0.5",
 	"engines": {
 		"vscode": "^1.4.0"
 	},

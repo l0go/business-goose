@@ -1,0 +1,9 @@
+.vscode
+.gitmodules
+template.html
+Generator.hx
+build.hxml
+run.hxml
+pages
+out/
+vendor/
